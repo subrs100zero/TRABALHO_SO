@@ -1,0 +1,59 @@
+import threading
+import time
+import random
+
+TAMANHO_BUFFER = 5 # Tamanho máximo do buffer
+NUM_PRODUTORES = 3
+NUM_CONSUMIDORES = 2
+
+buffer = [] # Inicializa o buffer como uma lista vazia
+s_buffer = threading.Semaphore(1)
+s_item = threading.Semaphore(0)
+s_vaga = threading.Semaphore(TAMANHO_BUFFER)
+
+def insere_item(item):
+    buffer.append(item)
+
+def retira_item():
+    return buffer.pop(0)
+
+def produtor(id):
+    while True:
+        pause = random.uniform(0,3)
+        time.sleep(pause)
+       
+        s_vaga.acquire()
+        s_buffer.acquire()
+       
+        item = random.randint(0,999)
+        insere_item(item) # Insere o item no buffer
+        
+        s_buffer.release()
+        s_item.release()
+       
+        print(f'Produtor{id} produziu {item}')
+
+def consumidor(id):
+    while True:
+        s_item.acquire()
+        s_buffer.acquire()
+       
+        item = retira_item() # Retira o item do buffer
+       
+        s_buffer.release()
+        s_vaga.release()
+       
+        print(f'Consumidor{id} consumiu {item}')
+       
+        pause = random.uniform(0 , 3)
+        time.sleep(pause)
+
+# Cria threads para os produtores
+for i in range(NUM_PRODUTORES):
+    thread = threading.Thread(target=produtor, args=(i + 1,))
+    thread.start()
+   
+# Cria threads para os consumidores
+for i in range(NUM_CONSUMIDORES):
+    thread = threading.Thread(target=consumidor, args=(i + 1,))
+    thread.start()
